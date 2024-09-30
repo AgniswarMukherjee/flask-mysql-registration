@@ -8,10 +8,10 @@ app = Flask(__name__)
 def create_connection():
     try:
         connection = mysql.connector.connect(
-            host = 'localhost',
-            database = 'student_db',  # Your database name
-            user= 'root',  # MySQL username
-            password = 'Agniswar@82!'  # MySQL password
+            host = 'localhost', 
+            database = 'student_db',  
+            user= 'root',  
+            password = 'Agniswar@82!'  
         )
         if connection.is_connected():
             print("Connected to MySQL Database")
@@ -43,6 +43,24 @@ def register_student(connection, first_name, last_name, email, phone, course, re
 def student_form():
     return render_template('register.html')
 
+
+import re # For regular expression-based validatation
+#Add functions to validate email, phone number, and password
+
+def is_valid_email(email):
+    #Regular expresiion for validation email format 
+    regex = r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'
+    return re.match(regex, email) is not None
+
+def is_valid_phone(phone):
+    #Ensuring the phone number contain only digits:
+    return phone.isdigit() and len(phone) == 10
+
+def is_valid_password(password):
+    #check if the password has at least 8 char
+    return len(password) >= 8
+
+
 @app.route('/register', methods=['POST'])
 def register():
     if request.method == 'POST':
@@ -54,6 +72,18 @@ def register():
         registration_date = request.form['registration_date']
         password = request.form['password']
 
+        #backend validation before inserting into the database
+        if not is_valid_email(email):
+            return "Invalid Email Format!!",400   #return a 400 Bad request error
+        
+        if not is_valid_phone(phone):
+            return "Invalid Phone Number!!",400
+        
+        if not is_valid_password(password):
+            return "Invalid Password!!",400
+        
+        #if the validation pass insert the data into the database
+
         connection = create_connection()
         if connection:
             register_student(connection, first_name, last_name, email, phone, course, registration_date, password)
@@ -64,6 +94,10 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
+
+        #check for empty fields
+        if not email or not password:
+            return "Please Fill out all the Fields!"
 
         connection = create_connection()
         if connection:
